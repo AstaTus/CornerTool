@@ -9,6 +9,7 @@ LINE_TYPE_PARAM_DEFINE = 3;
 LINE_TYPE_CLASS_END_DEFINE = 4;
 LINE_TYPE_EMPTY_DEFINE = 5;
 LINE_TYPE_ANNOTATOPN_DEFINE = 6;
+LINE_TYPE_STATIC_FINAL_DEFINE = 7;
 
 def check_line_type(subs):
     length = len(subs)
@@ -22,10 +23,12 @@ def check_line_type(subs):
         return  LINE_TYPE_EMPTY_DEFINE;
     elif length == 1 and subs[0][0:2] == '//':
         return LINE_TYPE_ANNOTATOPN_DEFINE;
+    elif length == 7:
+        return LINE_TYPE_STATIC_FINAL_DEFINE;
     else:
         return LINE_TYPE_INVALID;
 
-def convert_line(type, param0):
+def convert_line(type, param0, param1, param3):
     content = ''
     if type == LINE_TYPE_CLASS_BEGIN_DEFINE:
         content = 'function ' + param0 + '(){';
@@ -35,7 +38,8 @@ def convert_line(type, param0):
         content = '}';
     elif type == LINE_TYPE_ANNOTATOPN_DEFINE:
         content = param0;
-
+    elif type == LINE_TYPE_STATIC_FINAL_DEFINE:
+        content = param0 + '.' + param1 + ' = ' + param3;
     return content + '\n';
 
 def find_valid_lines(lines):
@@ -56,27 +60,31 @@ def find_valid_lines(lines):
 
 def converter_file(file_name, lines):
 
-    newlines = [];
+    class_lines = [];
+    final_lines = [];
     for line in lines:
         subs = line.split()
         type = check_line_type(subs)
         if type == LINE_TYPE_CLASS_BEGIN_DEFINE:
-            newlines.append(convert_line(type, subs[2]));
+            class_lines.append(convert_line(type, subs[2], 0, 0));
         elif type == LINE_TYPE_PARAM_DEFINE:
-            newlines.append(convert_line(type, subs[2]));
+            class_lines.append(convert_line(type, subs[2], 0, 0));
         elif type == LINE_TYPE_CLASS_END_DEFINE:
-            newlines.append(convert_line(type, subs[0]));
+            class_lines.append(convert_line(type, subs[0], 0, 0));
+        elif type == LINE_TYPE_STATIC_FINAL_DEFINE:
+            final_lines.append(convert_line(type, file_name, subs[4], subs[6]));
         elif type == LINE_TYPE_EMPTY_DEFINE:
-            newlines.append('\n');
+            class_lines.append('\n');
         elif type == LINE_TYPE_ANNOTATOPN_DEFINE:
-            newlines.append('    ' + subs[0]);
+            class_lines.append('    ' + subs[0]);
         else:
             raise Exception('new file name:' + file_name + ' line error:' + line);
 
-    newlines.append('module.exports = ' + file_name);
+    final_lines.append('\nmodule.exports = ' + file_name);
 
     js_file = open(JS_MEESSAGE_DIR + file_name + '.js', 'w');
-    js_file.writelines(newlines);
+    js_file.writelines(class_lines);
+    js_file.writelines(final_lines);
     js_file.close();
 
 def main():
