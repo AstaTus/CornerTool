@@ -76,7 +76,7 @@ def converter_file(file_name, lines):
         elif type == LINE_TYPE_EMPTY_DEFINE:
             class_lines.append('\n');
         elif type == LINE_TYPE_ANNOTATOPN_DEFINE:
-            class_lines.append('    ' + subs[0]);
+            class_lines.append('    ' + subs[0] + '\n');
         else:
             raise Exception('new file name:' + file_name + ' line error:' + line);
 
