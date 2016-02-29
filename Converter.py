@@ -7,6 +7,8 @@ LINE_TYPE_INVALID = 1;
 LINE_TYPE_CLASS_BEGIN_DEFINE = 2;
 LINE_TYPE_PARAM_DEFINE = 3;
 LINE_TYPE_CLASS_END_DEFINE = 4;
+LINE_TYPE_EMPTY_DEFINE = 5;
+LINE_TYPE_ANNOTATOPN_DEFINE = 6;
 
 def check_line_type(subs):
     length = len(subs)
@@ -16,6 +18,10 @@ def check_line_type(subs):
         return LINE_TYPE_PARAM_DEFINE;
     elif length == 1 and subs[0] == '}':
         return LINE_TYPE_CLASS_END_DEFINE;
+    elif length == 0:
+        return  LINE_TYPE_EMPTY_DEFINE;
+    elif length == 1 and subs[0][0:2] == '//':
+        return LINE_TYPE_ANNOTATOPN_DEFINE;
     else:
         return LINE_TYPE_INVALID;
 
@@ -27,8 +33,26 @@ def convert_line(type, param0):
         content = '    this.' + param0;
     elif type == LINE_TYPE_CLASS_END_DEFINE:
         content = '}';
+    elif type == LINE_TYPE_ANNOTATOPN_DEFINE:
+        content = param0;
 
     return content + '\n';
+
+def find_valid_lines(lines):
+    valid_lines = [];
+    is_valid_start = False;
+
+    for line in lines:
+        subs = line.split()
+        length = len(subs)
+        if not is_valid_start:
+            if length == 4 and subs[0] == 'public' and subs[3] == '{':
+                is_valid_start = True;
+                valid_lines.append(line)
+        else:
+            valid_lines.append(line)
+
+    return valid_lines;
 
 def converter_file(file_name, lines):
 
@@ -37,30 +61,36 @@ def converter_file(file_name, lines):
         subs = line.split()
         type = check_line_type(subs)
         if type == LINE_TYPE_CLASS_BEGIN_DEFINE:
-            newlines.append(convert_line(type, subs[2]))
+            newlines.append(convert_line(type, subs[2]));
         elif type == LINE_TYPE_PARAM_DEFINE:
-            newlines.append(convert_line(type, subs[2]))
+            newlines.append(convert_line(type, subs[2]));
         elif type == LINE_TYPE_CLASS_END_DEFINE:
-            newlines.append(convert_line(type, subs[0]))
+            newlines.append(convert_line(type, subs[0]));
+        elif type == LINE_TYPE_EMPTY_DEFINE:
+            newlines.append('\n');
+        elif type == LINE_TYPE_ANNOTATOPN_DEFINE:
+            newlines.append('    ' + subs[0]);
         else:
-            Exception("new file name:" + file_name + " line error:" + line);
+            raise Exception('new file name:' + file_name + ' line error:' + line);
 
-        newlines.append('module.exports = ' + file_name);
+    newlines.append('module.exports = ' + file_name);
 
-        js_file = open(JS_MEESSAGE_DIR + file_name + '.js', 'w');
-        js_file.writelines(newlines);
-        js_file.close();
+    js_file = open(JS_MEESSAGE_DIR + file_name + '.js', 'w');
+    js_file.writelines(newlines);
+    js_file.close();
 
 def main():
     file_names = os.listdir(JAVA_MESSAGE_DIR)
     for file_name in file_names:
             print(file_name)
             names = os.path.splitext(file_name);
-            if names[1] == '.java':
+            if names[1] == '.java' and names[0] != 'MessagePacket':
                 f = open(JAVA_MESSAGE_DIR + file_name)
                 lines = f.readlines()
                 new_file_name = names[0] ;
-                converter_file(new_file_name, lines)
+
+                valid_lines = find_valid_lines(lines)
+                converter_file(new_file_name, valid_lines)
 
 if __name__ == '__main__':
     main()
