@@ -45,7 +45,9 @@ def converter_file(file_name, lines):
         else:
             Exception("new file name:" + file_name + " line error:" + line);
 
-        js_file = open(JS_MEESSAGE_DIR + file_name, 'w');
+        newlines.append('module.exports = ' + file_name);
+
+        js_file = open(JS_MEESSAGE_DIR + file_name + '.js', 'w');
         js_file.writelines(newlines);
         js_file.close();
 
@@ -57,7 +59,7 @@ def main():
             if names[1] == '.java':
                 f = open(JAVA_MESSAGE_DIR + file_name)
                 lines = f.readlines()
-                new_file_name = names[0] + '.js';
+                new_file_name = names[0] ;
                 converter_file(new_file_name, lines)
 
 if __name__ == '__main__':
