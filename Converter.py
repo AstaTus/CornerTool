@@ -1,6 +1,6 @@
 import os.path
 
-JAVA_MESSAGE_DIR = "D:/CornerAndroid/app/src/main/java/com/astatus/cornerandroid/message/";
+JAVA_MESSAGE_DIR = "E:/CornerAndroid/app/src/main/java/com/astatus/cornerandroid/message/";
 JS_MEESSAGE_DIR = "D:/CornerServer/message/";
 
 LINE_TYPE_INVALID = 1;
@@ -10,13 +10,17 @@ LINE_TYPE_CLASS_END_DEFINE = 4;
 LINE_TYPE_EMPTY_DEFINE = 5;
 LINE_TYPE_ANNOTATOPN_DEFINE = 6;
 LINE_TYPE_STATIC_FINAL_DEFINE = 7;
+LINE_TYPE_ARRAY_PARAM_DEFINE = 8;
 
 def check_line_type(subs):
     length = len(subs)
     if length == 4 and subs[3] == '{':
         return LINE_TYPE_CLASS_BEGIN_DEFINE;
     elif length == 3:
-        return LINE_TYPE_PARAM_DEFINE;
+            if subs[1][0:9] == 'ArrayList':
+                return LINE_TYPE_ARRAY_PARAM_DEFINE;
+            else:
+                return LINE_TYPE_PARAM_DEFINE;
     elif length == 1 and subs[0] == '}':
         return LINE_TYPE_CLASS_END_DEFINE;
     elif length == 0:
@@ -34,6 +38,8 @@ def convert_line(type, param0, param1, param3):
         content = 'function ' + param0 + '(){';
     elif type == LINE_TYPE_PARAM_DEFINE:
         content = '    this.' + param0;
+    elif type == LINE_TYPE_ARRAY_PARAM_DEFINE:
+        content = '    this.' + param0[0:len(param0) - 1] + ' = new Array();';
     elif type == LINE_TYPE_CLASS_END_DEFINE:
         content = '}';
     elif type == LINE_TYPE_ANNOTATOPN_DEFINE:
@@ -68,6 +74,8 @@ def converter_file(file_name, lines):
         if type == LINE_TYPE_CLASS_BEGIN_DEFINE:
             class_lines.append(convert_line(type, subs[2], 0, 0));
         elif type == LINE_TYPE_PARAM_DEFINE:
+            class_lines.append(convert_line(type, subs[2], 0, 0));
+        elif type == LINE_TYPE_ARRAY_PARAM_DEFINE:
             class_lines.append(convert_line(type, subs[2], 0, 0));
         elif type == LINE_TYPE_CLASS_END_DEFINE:
             class_lines.append(convert_line(type, subs[0], 0, 0));
