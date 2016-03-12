@@ -95,7 +95,17 @@ def converter_file(file_name, lines):
     js_file.writelines(final_lines);
     js_file.close();
 
+
+def remove_dir_files(path):
+    for file in os.listdir(path):
+             file_path = os.path.join(path,  file)
+             if os.path.isfile(file_path) and file != 'MessagePacket.js':
+                 os.remove(file_path)
+
 def main():
+
+    remove_dir_files(JS_MEESSAGE_DIR)
+
     file_names = os.listdir(JAVA_MESSAGE_DIR)
     for file_name in file_names:
             print(file_name)
